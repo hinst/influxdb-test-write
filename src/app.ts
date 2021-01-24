@@ -7,7 +7,7 @@ import { sleep } from './sleep';
 
 class App {
     apiUrl = 'http://localhost:8086/api/v2';
-    orgId = '9c7a0f5daecd9269';
+    orgId = '9bff3737ef1919a6';
     apiToken = fs.readFileSync('./influxDbToken.txt').toString().trim();
     authorizationHeader = { Authorization: 'Token ' + this.apiToken };
 
@@ -25,9 +25,12 @@ class App {
             body: JSON.stringify({
                 orgID: this.orgId,
                 name: 'test',
-                retentionRules: []
+                retentionRules: [],
+                shardGroupDuration: Math.pow(10, 9) * 60 * 60 * 24 * 30
             }),
         });
+        if (!createBucketResponse.ok)
+            throw new Error('Cannot create bucket: ' + await createBucketResponse.text());
         return await createBucketResponse.json();
     }
 
@@ -70,7 +73,7 @@ class App {
                 body: text
             });
             if (!response.ok)
-                throw new Error('Cannot write values: ' + response.statusText);
+                throw new Error('Cannot write values: ' + await response.text());
         }
     }
 
@@ -80,7 +83,7 @@ class App {
         const timedValues: [number, number][] = [];
         for (let currentDate = startDateTime, currentValue = 0;
             currentDate < endDateTime;
-            currentDate = currentDate.plus({minutes: 1}), ++currentValue
+            currentDate = currentDate.plus({minutes: 15}), ++currentValue
         ) {
             timedValues.push([currentDate.toMillis(), currentValue]);
         }
